@@ -4,3 +4,8 @@ This is the Optimized Ecological Corridor Designer, a `R` package for mapping op
 
 ## Quick Start
 
+Install using `devtools`:
+
+```R
+devtools::install_github("AndersonEduardo/oecd")
+```
