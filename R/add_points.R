@@ -18,9 +18,9 @@
 #' @export
 add_points = function(xy, landscape, width){
 
-  buff = gBuffer(xy, width=width)
+  buff = rgeos::gBuffer(xy, width=width)
 
-  output = bind(landscape, buff)
+  output = raster::bind(landscape, buff)
   output = aggregate(output)
 
   return(output)

@@ -25,10 +25,10 @@
 #' pts = rbind(c(-45,23))
 #' l = rgdal::readOGR('./path to shapefile directory/')
 #' add_points(pts, l, 0.1)
-#'
+
 #' @export
-matrix_mapper = function(xy, landscape, folder_path, moving_window=TRUE, window_size,
-                         restoration_size, max_dist, habitat=1,
+matrix_mapper = function(xy, landscape, folder_path, moving_window=TRUE,
+                         window_size, restoration_size, max_dist, habitat=1,
                          matrix=0,  plot=FALSE){
 
   cat('\n[STATUS] Inicializando... ')
@@ -46,9 +46,10 @@ matrix_mapper = function(xy, landscape, folder_path, moving_window=TRUE, window_
 
       cat('[STATUS] Computando geometria da janela deslizante... ')
       start = Sys.time()
-      window_geometry = gBuffer(xy[i], width=window_size)
+      window_geometry = rgeos::gBuffer(xy[i], width=window_size)
       end = Sys.time()
-      cat('pronto. (latência:', as.numeric(difftime(end, start, unit='secs')), 'segundos)\n')
+      cat('pronto. (latência:', as.numeric(difftime(end, start, unit='secs')),
+          'segundos)\n')
 
       if (plot == TRUE){
         cat('[STATUS] Executando plot... ')
@@ -57,17 +58,19 @@ matrix_mapper = function(xy, landscape, folder_path, moving_window=TRUE, window_
         plot(buffer_geometry, add=TRUE)
         plot(xy[i], add=TRUE)
         end = Sys.time()
-        cat('pronto. (latência:', as.numeric(difftime(end, start, unit='secs')), 'segundos)\n')
+        cat('pronto. (latência:', as.numeric(difftime(end, start, unit='secs')),
+            'segundos)\n')
       }
 
       cat('[STATUS] Recortando paisagem para a geometria da janela... ')
       start = Sys.time()
       croped_area = raster::crop(
-        landscape,
+        landscape[landscape$layer==habitat, ],
         window_geometry
       )
       end = Sys.time()
-      cat('pronto. (latência:', as.numeric(difftime(end, start, unit='secs')), 'segundos)\n')
+      cat('pronto. (latência:', as.numeric(difftime(end, start, unit='secs')),
+          'segundos)\n')
 
       if (is.null(croped_area)){
 
@@ -79,20 +82,22 @@ matrix_mapper = function(xy, landscape, folder_path, moving_window=TRUE, window_
       start = Sys.time()
       croped_area = sp::disaggregate(croped_area)
       end = Sys.time()
-      cat('pronto. (latência:', as.numeric(difftime(end, start, unit='secs')), 'segundos)\n')
+      cat('pronto. (latência:', as.numeric(difftime(end, start, unit='secs')),
+          'segundos)\n')
 
     }else{
 
-      croped_area = landscape
+      croped_area = landscape[landscape$layer==habitat, ]
 
       cat('[STATUS] Executando plot... ')
       start = Sys.time()
       if (plot == TRUE){
-        plot(landscape)
+        plot(croped_area)
         plot(xy[i], add=TRUE)
       }
       end = Sys.time()
-      cat('pronto. (latência:', as.numeric(difftime(end, start, unit='secs')), 'segundos)\n')
+      cat('pronto. (latência:', as.numeric(difftime(end, start, unit='secs')),
+          'segundos)\n')
 
     }
 
@@ -100,7 +105,8 @@ matrix_mapper = function(xy, landscape, folder_path, moving_window=TRUE, window_
     start = Sys.time()
     focal_area = add_points(xy[i], croped_area, width=restoration_size)
     end = Sys.time()
-    cat('pronto. (latência:', as.numeric(difftime(end, start, unit='secs')), 'segundos)\n')
+    cat('pronto. (latência:', as.numeric(difftime(end, start, unit='secs')),
+        'segundos)\n')
 
     cat('[STATUS] Realizando alguns ajustes... ')
     start = Sys.time()
@@ -110,7 +116,8 @@ matrix_mapper = function(xy, landscape, folder_path, moving_window=TRUE, window_
     names(focal_area@data) = 'layer'
     focal_area@data$layer = habitat
     end = Sys.time()
-    cat('pronto. (latência:', as.numeric(difftime(end, start, unit='secs')), 'segundos)\n')
+    cat('pronto. (latência:', as.numeric(difftime(end, start, unit='secs')),
+        'segundos)\n')
 
     cat('[STATUS] Computando métrica... ')
     start = Sys.time()
@@ -123,13 +130,14 @@ matrix_mapper = function(xy, landscape, folder_path, moving_window=TRUE, window_
       ), error=function(e){NA}
     )
     end = Sys.time()
-    cat('pronto. (latência:', as.numeric(difftime(end, start, unit='secs')), 'segundos)\n')
+    cat('pronto. (latência:', as.numeric(difftime(end, start, unit='secs')),
+        'segundos)\n')
 
     cat('[STATUS] Registrando métrica computada...')
     xy_df[i,'metric'] = metric
     cat('pronto.\n')
 
-    write.csv(xy_df, file='./matrixmapper.csv')
+    write.csv(xy_df, file=file.path(folder_path,'matrixmapper.csv'))
 
     cat('[STATUS] Finalizado ponto', i, ': metrica', metric, '\n')
     point_time_end = Sys.time()

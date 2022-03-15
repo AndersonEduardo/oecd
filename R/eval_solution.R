@@ -15,17 +15,20 @@
 #' eval_solution(l, './path to my project directory/', 100, 1, 'IIC')
 #'
 #' @export
-eval_solution = function(solution_polygon, folder_path, max_dist, habitat, metric='IIC'){
+eval_solution = function(solution_polygon, folder_path, max_dist, habitat,
+                         metric='IIC'){
 
-  writeOGR(solution_polygon, folder_path, 'solution_polygon',
+  rgdal::writeOGR(solution_polygon, folder_path, 'solution_polygon',
            driver='ESRI Shapefile', overwrite_layer=TRUE, delete_dsn=TRUE)
 
-  landscape = upload_land(file.path(folder_path, 'solution_polygon.shp'),
-                          bound_path = NULL,
-                          habitat = habitat,
-                          max_dist = max_dist)
+  landscape = lconnect::upload_land(
+    file.path(folder_path, 'solution_polygon.shp'),
+    bound_path = NULL,
+    habitat = habitat,
+    max_dist = max_dist
+    )
 
-  metric = con_metric(landscape, metric=metric)
+  metric = lconnect::con_metric(landscape, metric=metric)
 
   return(metric)
 
